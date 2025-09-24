@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { networkInterfaces } from "os";
 
 const app = express();
 app.use(express.json());
@@ -61,11 +62,33 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  
+  // Get network IP address
+  const getNetworkIP = () => {
+    const nets = networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+    return '127.0.0.1';
+  };
+  
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    const networkIP = getNetworkIP();
+    console.log('');
+    console.log('Server running at:');
+    console.log(`   ➜ Local:   http://localhost:${port}`);
+    console.log(`   ➜ Network: http://${networkIP}:${port}`);
+    console.log('');
+    console.log('To access from your mobile device:');
+    console.log(`   Copy this URL: http://${networkIP}:${port}`);
+    console.log('');
   });
 })();
